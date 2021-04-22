@@ -1,16 +1,16 @@
-# weight_mon
+# Weight Tracker
 
-A new Flutter application.
+Keep exercising whenever you want to but also easily keep track of your weight.
+With this app, it is easy to maintain your weight and also calculate your BMI to check your health.
 
-## Getting Started
+## Screenshots
 
-This project is a starting point for a Flutter application.
+![Screenshot_1619111167](https://user-images.githubusercontent.com/68701271/115755715-45c9d880-a3bb-11eb-8b5a-2bca65167728.png)
 
-A few resources to get you started if this is your first Flutter project:
+![Screenshot_1619111241](https://user-images.githubusercontent.com/68701271/115755758-4febd700-a3bb-11eb-9714-b831f802d7ef.png)
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+![Screenshot_1619111465](https://user-images.githubusercontent.com/68701271/115756547-db656800-a3bb-11eb-9345-f9199cacbbfb.png)
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## VERY OLD SCREEHSHOT (Early Stages)
+
+![Screenshot_1613321097](https://user-images.githubusercontent.com/68701271/115755802-5aa66c00-a3bb-11eb-89e4-c3de7c9cef83.png)
