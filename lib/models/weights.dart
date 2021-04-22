@@ -28,6 +28,9 @@ class UserWeight {
       if (v.containsKey('date')) {
         if (v['date'] == null) {
           return;
+        } else if (v['date'] == dt) {
+          v['weight'] = wt;
+          return;
         }
       }
     }
@@ -62,8 +65,8 @@ class UserWeight {
     return kNoWeightText; // If there is no weight for given date
   }
 
-  double getTotalWeight() {
-    return totalWeight;
+  double getAvgWeight() {
+    return (totalWeight / listOfWeights.length);
   }
 
   String serialize() {
@@ -83,22 +86,15 @@ class UserWeight {
     List<dynamic> s = jsonDecode(prefs.getString('listOfWeights') ?? []);
     listOfWeights = s;
     sortList();
-    print("====START OF DECODE===");
-    //print(listOfWeights);
-    //print(listOfWeights.runtimeType);
     for (var v in listOfWeights) {
-      print(v);
       totalWeight += double.parse(v['weight']);
     }
-    print("====END OF DECODE===");
-    // String json = jsonDecode(prefs.getString('listOfWeights') ?? "");
   }
 
   saveData() async {
     print("Saving data...");
     sortList();
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    //String counter = prefs.getString('listOfWeights');
     await prefs.setString('listOfWeights', serialize());
   }
 }

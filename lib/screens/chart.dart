@@ -1,6 +1,8 @@
+import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../constants.dart';
 
 class ChartPage extends StatefulWidget {
   static const routeName = '/chartdata';
@@ -14,37 +16,54 @@ class _ChartPage extends State<ChartPage> {
     const Color(0xff02d39a),
   ];
 
-  bool showAvg = false;
+  static const bool showAvg = false;
   List globalData = [];
+  // List<FlSpot> dummySpots = [
+  //   FlSpot(1, 2),
+  //   FlSpot(2, 5),
+  //   FlSpot(3.5, 3.1),
+  //   FlSpot(4, 4),
+  //   FlSpot(4.6, 3),
+  //   FlSpot(5, 4),
+  //   FlSpot(6, 5),
+  //   FlSpot(7, 3),
+  // ];
 
-  List<FlSpot> dummySpots = [
-    FlSpot(1, 2),
-    FlSpot(2, 5),
-    FlSpot(3.5, 3.1),
-    FlSpot(4, 4),
-    FlSpot(4.6, 3),
-    FlSpot(5, 4),
-    FlSpot(6, 5),
-    FlSpot(7, 3),
-  ];
-
+  // Get only the weights of the dates that lie within the current week
+  // Discard the rest
   void buildData(List w) {
     globalData = w;
-    sortList(globalData);
-    if (globalData.length > 7) {
-      globalData = globalData.sublist(globalData.length - 7);
+    DateTime startDate =
+        DateTime.parse(DateFormat("yyyyMMdd").format(DateTime.now()));
+    while (startDate.weekday != DateTime.monday) {
+      startDate = startDate.subtract(Duration(days: 1));
     }
-    print("Global Data List : $globalData");
+
+    globalData.removeWhere(
+        (element) => DateTime.parse(element['date']).isBefore(startDate));
+    globalData.removeWhere(
+        (element) => DateTime.parse(element['date']).isAfter(DateTime.now()));
+    //sortList(globalData);
   }
 
   void sortList(List list) {
     list.sort((a, b) {
-      var x = a['date'];
-      var y = b['date'];
+      var x = a['date'], y = b['date'];
       return x.compareTo(y);
     });
   }
 
+  // Return the minimum and maximum weights of some date within the current week
+  List<double> findMaxMin() {
+    double ma = 40, mi = 150;
+    for (var v in globalData) {
+      ma = max(ma, double.parse(v['weight']));
+      mi = min(mi, double.parse(v['weight']));
+    }
+    return [ma, mi];
+  }
+
+  // Get the (x,y) coordinates or spots to draw the graph
   List<FlSpot> getSpots() {
     double x, y;
     List<FlSpot> spots = [];
@@ -52,37 +71,33 @@ class _ChartPage extends State<ChartPage> {
     DateTime startDate =
         DateTime.parse(DateFormat("yyyyMMdd").format(DateTime.now()));
 
-    // Monday is 1
-    while (startDate.weekday != 1) {
+    double searchKey(DateTime st) {
+      for (var v in globalData) {
+        if (v['date'] == st.toString()) {
+          return double.parse(v['weight']);
+        }
+      }
+      return -1;
+    }
+
+    while (startDate.weekday != DateTime.monday) {
       startDate = startDate.subtract(Duration(days: 1));
     }
 
-    bool searchKey(DateTime st) {
-      for (var v in globalData) {
-        if (v['date'] == st.toString()) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    for (int i = 0; i < 7; i++) {
-      if (i > DateTime.now().weekday) break;
-      if (searchKey(startDate)) {
+    // Index of day starts from 1 (Monday) to 7(Sunday)
+    // Starting i from 0 causes visual problems in the chart
+    for (int i = 1; i <= 7; i++) {
+      if (searchKey(startDate) != -1) {
         x = startDate.weekday.toDouble();
-        y = double.parse(globalData[i]['weight']);
+        y = searchKey(startDate);
         spots.add(FlSpot(x, y));
-        //sortedMap.addAll({x: y});
       } else {
-        x = startDate.weekday.toDouble();
-        spots.add(FlSpot(x, 20.0));
-        //sortedMap.addAll({x: 20.0});
+        // If no weight for some date within the week, set the weight to the minimum value of the Y axis of the graph
+        spots.add(FlSpot(i.toDouble(),
+            globalData.isNotEmpty ? findMaxMin()[1] - 10.0 : 40.0));
       }
-
-      //print("Start Date is now : $startDate");
       startDate = startDate.add(Duration(days: 1));
     }
-
     return spots;
   }
 
@@ -96,44 +111,23 @@ class _ChartPage extends State<ChartPage> {
         automaticallyImplyLeading: true,
         title: Text("Graph for the current week"),
       ),
-      body: Stack(
-        children: <Widget>[
-          AspectRatio(
-            aspectRatio: 1,
-            child: Container(
-              decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(18),
-                  ),
-                  color: Color(0xff232d37)),
+      body: Container(
+        decoration: const BoxDecoration(color: kChartBackgroundColor),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(
-                    right: 18.0, left: 12.0, top: 24, bottom: 12),
+                    left: 18.0, right: 26.0, top: 20.0, bottom: 20.0),
                 child: LineChart(
-                  showAvg ? avgData() : mainData(),
+                  mainData(),
                 ),
               ),
             ),
-          ),
-          // SizedBox(
-          //   width: 60,
-          //   height: 34,
-          //   child: FlatButton(
-          //     onPressed: () {
-          //       setState(() {
-          //         showAvg = !showAvg;
-          //       });
-          //     },
-          //     child: Text(
-          //       'avg',
-          //       style: TextStyle(
-          //           fontSize: 12,
-          //           color:
-          //               showAvg ? Colors.white.withOpacity(0.5) : Colors.white),
-          //     ),
-          //   ),
-          // ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -142,18 +136,18 @@ class _ChartPage extends State<ChartPage> {
     return LineChartData(
       gridData: FlGridData(
         show: true,
-        drawVerticalLine: false,
-        drawHorizontalLine: false,
+        drawVerticalLine: true,
+        drawHorizontalLine: true,
         getDrawingHorizontalLine: (value) {
           return FlLine(
-            color: const Color(0xff37434d),
-            strokeWidth: 1,
+            color: const Color(0xff1b4332),
+            strokeWidth: 0.5,
           );
         },
         getDrawingVerticalLine: (value) {
           return FlLine(
-            color: const Color(0xff37434d),
-            strokeWidth: 1,
+            color: const Color(0xff1b4332),
+            strokeWidth: 0.5,
           );
         },
       ),
@@ -212,11 +206,13 @@ class _ChartPage extends State<ChartPage> {
       ),
       borderData: FlBorderData(
           show: true,
-          border: Border.all(color: const Color(0xff37434d), width: 1)),
+          border: Border.all(color: const Color(0xff1b4332), width: 1)),
       minX: 1,
       maxX: 7,
-      minY: 20,
-      maxY: 120,
+      minY: globalData.isNotEmpty ? findMaxMin()[1] - 10.0 : 40,
+      maxY: globalData.isNotEmpty ? findMaxMin()[0] + 10.0 : 120,
+      // minY: 40.0,
+      // maxY: 100.0,
       lineBarsData: [
         LineChartBarData(
           spots: getSpots(),
@@ -232,120 +228,6 @@ class _ChartPage extends State<ChartPage> {
             colors:
                 gradientColors.map((color) => color.withOpacity(0.3)).toList(),
           ),
-        ),
-      ],
-    );
-  }
-
-  LineChartData avgData() {
-    return LineChartData(
-      lineTouchData: LineTouchData(enabled: false),
-      gridData: FlGridData(
-        show: true,
-        drawHorizontalLine: true,
-        getDrawingVerticalLine: (value) {
-          return FlLine(
-            color: const Color(0xff37434d),
-            strokeWidth: 1,
-          );
-        },
-        getDrawingHorizontalLine: (value) {
-          return FlLine(
-            color: const Color(0xff37434d),
-            strokeWidth: 1,
-          );
-        },
-      ),
-      titlesData: FlTitlesData(
-        show: true,
-        bottomTitles: SideTitles(
-          showTitles: true,
-          reservedSize: 22,
-          getTextStyles: (value) => const TextStyle(
-              color: Color(0xff68737d),
-              fontWeight: FontWeight.bold,
-              fontSize: 16),
-          getTitles: (value) {
-            switch (value.toInt()) {
-              case 0:
-                return 'MON';
-              case 1:
-                return 'TUE';
-              case 2:
-                return 'WED';
-              case 3:
-                return 'THU';
-              case 4:
-                return 'FRI';
-              case 5:
-                return 'SAT';
-              case 6:
-                return 'SUN';
-            }
-            return '';
-          },
-          margin: 8,
-        ),
-        leftTitles: SideTitles(
-          showTitles: true,
-          getTextStyles: (value) => const TextStyle(
-            color: Color(0xff67727d),
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-          getTitles: (value) {
-            switch (value.toInt()) {
-              case 1:
-                return '10k';
-              case 3:
-                return '30k';
-              case 5:
-                return '50k';
-            }
-            return '';
-          },
-          reservedSize: 28,
-          margin: 12,
-        ),
-      ),
-      borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: const Color(0xff37434d), width: 1)),
-      minX: 0,
-      maxX: 6,
-      minY: 0,
-      maxY: 6,
-      lineBarsData: [
-        LineChartBarData(
-          spots: [
-            FlSpot(0, 3.44),
-            FlSpot(1, 3.44),
-            FlSpot(2, 3.44),
-            FlSpot(3, 3.44),
-            FlSpot(4, 3.44),
-            FlSpot(5, 3.44),
-            FlSpot(6, 3.44),
-          ],
-          isCurved: true,
-          colors: [
-            ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                .lerp(0.2),
-            ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                .lerp(0.2),
-          ],
-          barWidth: 5,
-          isStrokeCapRound: true,
-          dotData: FlDotData(
-            show: false,
-          ),
-          belowBarData: BarAreaData(show: true, colors: [
-            ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                .lerp(0.2)
-                .withOpacity(0.1),
-            ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                .lerp(0.2)
-                .withOpacity(0.1),
-          ]),
         ),
       ],
     );

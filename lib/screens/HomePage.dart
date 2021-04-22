@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:weight_mon/screens/NotEnoughData.dart';
-import 'package:weight_mon/widgets/buildEventLists.dart';
+import 'package:weight_mon/widgets/displayWeightCard.dart';
 import '../models/holidays.dart';
 import 'package:intl/intl.dart';
 import '../models/weights.dart';
 import '../constants.dart';
 import 'about.dart';
 import 'chart.dart';
+import './bmiPage.dart';
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -20,8 +21,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   DateTime selectedDate;
   UserWeight uw = new UserWeight();
   // Store date and corresponding list of weight (length 1)
+  // _events is used for building the table calender on screen
   Map<DateTime, List> _events = {};
-  //List _selectedEvents = [-1];
 
   // Controllers
   final myController = TextEditingController();
@@ -31,10 +32,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-
-    // final _selectedDay = selectedDate;
-
-    //_selectedEvents = _events[_selectedDay] ?? ["No weight given!"];
     _calendarController = CalendarController();
     _animationController = AnimationController(
       vsync: this,
@@ -49,8 +46,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     getData();
   }
 
+  // read data from shared preferences whenever app is initialized
   void getData() async {
-    await uw.read();
+    await uw
+        .read(); // Call read function of the User object, so that data is read and used from shared preferences
     if (mounted) {
       setState(() {
         for (var v in uw.listOfWeights) {
@@ -70,37 +69,33 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   void _onDaySelected(DateTime day, List events, List holidays) {
     DateTime dt = DateTime.parse(DateFormat("yyyyMMdd").format(day));
-
-    print('CALLBACK: _onDaySelected');
     setState(() {
       selectedDate = dt;
-      // _selectedEvents = [uw.getWeight(dt)];
     });
-    print("SERIALIZED TEXT ${uw.serialize()}");
   }
 
+  // call input dialog box upon long pressing on a date to enter the user's weight on that day
   void _onDayLongPressed(DateTime day, List events, List holidays) {
     DateTime dt = DateTime.parse(DateFormat("yyyyMMdd").format(day));
-    print("date long pressed");
-
     setState(() {
       selectedDate = dt;
-      //_selectedEvents = [uw.getWeight(dt)];
     });
 
+    // For now, I was unable to properly show a input dialog box, so a modal bottom sheet is used
     _modalBottomSheetMenu(dt);
   }
 
   void _onVisibleDaysChanged(
       DateTime first, DateTime last, CalendarFormat format) {
-    print('CALLBACK: _onVisibleDaysChanged');
+    //print('CALLBACK: _onVisibleDaysChanged');
   }
 
   void _onCalendarCreated(
       DateTime first, DateTime last, CalendarFormat format) {
-    print('CALLBACK: _onCalendarCreated');
+    //print('CALLBACK: _onCalendarCreated');
   }
 
+  // return the input modal bottom sheet widget
   void _modalBottomSheetMenu(DateTime dt) {
     showModalBottomSheet(
       shape: RoundedRectangleBorder(
@@ -110,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       isScrollControlled: true,
       builder: (builder) {
         return Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text("Add a weight"),
             Container(
@@ -127,7 +122,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 ],
                 //textAlign: TextAlign.center,
                 autofocus: true,
-                maxLength: 4,
+                maxLength: 5,
                 onSubmitted: (value) {
                   if (value == "0.0" || value.isEmpty || value == "0") {
                     setState(() {
@@ -135,15 +130,16 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     });
                     Navigator.pop(context);
                   } else {
-                    print("Weight entered is $value");
-                    print("Date passed is $dt");
                     setState(() {
                       _events[dt] = [value].toList();
-                      uw.addWeight(dt.toString(), value);
+                      if (double.parse(value) >= 30.0) {
+                        // add the given weight to the total data
+                        uw.addWeight(dt.toString(), value);
+                      }
                     });
                     Navigator.pop(context);
                   }
-
+                  // save the weights entered permanently, so that the same is reloaded upon loading the app
                   uw.saveData();
                 },
                 decoration: InputDecoration(
@@ -172,6 +168,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             icon: Icon(Icons.add),
             color: Colors.white,
             onPressed: () {
+              // If no weights are entered by the user for any day within the current week, show 'Not enough data'
+              // else show the graph
               if (uw.length() >= 1) {
                 Navigator.pushNamed(context, ChartPage.routeName,
                     arguments: uw.listOfWeights);
@@ -187,11 +185,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
           _buildTableCalendar(),
-          const SizedBox(height: 8.0),
+          const SizedBox(height: 16.0),
           //_buildButtons(),
-          const SizedBox(height: 8.0),
           Expanded(
-            child: BuildEventList(uw.getWeight(selectedDate.toString())),
+            // Display the weight of the selected day
+            child: DisplayWeightCard(uw.getWeight(selectedDate.toString())),
           ),
           //Expanded(child: BuildEventList(uw.getTotalWeight().toString()),),
         ],
@@ -202,16 +200,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   // Simple TableCalendar configuration (using Styles)
   Widget _buildTableCalendar() {
     return TableCalendar(
-      // initialSelectedDay: DateTime.now(),
       endDay: DateTime.now(),
       calendarController: _calendarController,
       events: _events,
       holidays: Holidays().getHolidays(),
       startingDayOfWeek: StartingDayOfWeek.monday,
       calendarStyle: CalendarStyle(
-        selectedColor: Colors.deepOrange[400],
-        todayColor: Colors.deepOrange[200],
-        markersColor: Colors.green[700],
+        selectedColor: kSelectedColor,
+        todayColor: kTodayColor,
+        markersColor: kMarkersColor,
         markersAlignment: Alignment.center,
         markersPositionBottom: null,
         outsideDaysVisible: false,
@@ -220,7 +217,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         formatButtonTextStyle:
             TextStyle().copyWith(color: Colors.white, fontSize: 15.0),
         formatButtonDecoration: BoxDecoration(
-          color: Colors.deepOrange[400],
+          color: kTableButtonColor,
           borderRadius: BorderRadius.circular(16.0),
         ),
       ),
@@ -249,6 +246,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   Widget _buildEventsMarker(DateTime date) {
     // events parameter is not used
+    // If any weight is entered for any dates, display a small tick mark near to that date
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       width: 25.0,
@@ -281,7 +279,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               ],
             ),
             decoration: BoxDecoration(
-              color: Colors.deepOrange,
+              color: kDrawerColor,
             ),
           ),
           ListTile(
@@ -301,6 +299,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               setState(() {
                 uw.destroyData();
               });
+            },
+          ),
+          ListTile(
+            title: Text('Calculate BMI'),
+            onTap: () {
+              Navigator.pushNamed(context, InputPage.routeName,
+                  arguments: uw.getAvgWeight());
             },
           ),
           ListTile(

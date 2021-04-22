@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// If there is no data entered by the user, then display this page
 class NotEnoughData extends StatelessWidget {
   static const routeName = '/notEnoughData';
   @override

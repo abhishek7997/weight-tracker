@@ -38,10 +38,6 @@ class _AboutState extends State<About> {
                     //offset: Offset(2.0, 2.0), // shadow direction: bottom right
                   )
                 ],
-                // image: DecorationImage(
-                //   image: AssetImage('images/intellicarsLogo.jpeg'),
-                //   fit: BoxFit.cover,
-                // ),
                 image: DecorationImage(
                   image: AssetImage('images/WeightMonBlue.png'),
                   fit: BoxFit.cover,
@@ -57,7 +53,7 @@ class _AboutState extends State<About> {
                   Text(
                     'Weight Tracker',
                     style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 5),
