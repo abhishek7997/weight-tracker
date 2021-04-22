@@ -140,7 +140,7 @@ class _InputPageState extends State<InputPage> {
                         ),
                         Text(
                           //weight.toString(),
-                          avgWeight.toString(),
+                          avgWeight.toStringAsFixed(2),
                           style: kNumberTextStyle,
                         ),
                         // Row(
