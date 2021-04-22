@@ -143,30 +143,6 @@ class _InputPageState extends State<InputPage> {
                           avgWeight.toStringAsFixed(2),
                           style: kNumberTextStyle,
                         ),
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.center,
-                        //   children: [
-                        //     RoundIconButton(
-                        //       icon: FontAwesomeIcons.minus,
-                        //       onPressed: () {
-                        //         setState(() {
-                        //           avgWeight--;
-                        //         });
-                        //       },
-                        //     ),
-                        //     SizedBox(
-                        //       width: 10,
-                        //     ),
-                        //     RoundIconButton(
-                        //       icon: FontAwesomeIcons.plus,
-                        //       onPressed: () {
-                        //         setState(() {
-                        //           avgWeight++;
-                        //         });
-                        //       },
-                        //     ),
-                        //   ],
-                        // ),
                       ],
                     ),
                   ),
