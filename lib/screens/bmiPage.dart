@@ -31,7 +31,7 @@ class _InputPageState extends State<InputPage> {
     avgWeight = ModalRoute.of(context).settings.arguments;
     return Scaffold(
       appBar: AppBar(
-        title: Text('BMI CALCULATOR'),
+        title: Text('Calculate BMI'),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
