@@ -1,12 +1,12 @@
 class BMICalculator {
   BMICalculator({this.height, this.weight});
 
-  final int height;
-  final int weight;
-  double _bmi;
+  final int? height;
+  final int? weight;
+  late double _bmi;
 
   String calculateBMI() {
-    _bmi = weight / ((height / 100) * (height / 100));
+    _bmi = weight! / ((height! / 100) * (height! / 100));
     return _bmi.toStringAsFixed(1);
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 
 class About extends StatefulWidget {
   static const routeName = '/about';
+
   @override
   _AboutState createState() => _AboutState();
 }
@@ -39,7 +40,7 @@ class _AboutState extends State<About> {
                   )
                 ],
                 image: DecorationImage(
-                  image: AssetImage('images/WeightMonBlue.png'),
+                  image: AssetImage('assets/images/WeightMonBlue.png'),
                   fit: BoxFit.cover,
                 ),
                 shape: BoxShape.circle,
@@ -62,19 +63,19 @@ class _AboutState extends State<About> {
                     height: 10.0,
                   ),
                   Text(
-                    'Made by M.Abhishek',
+                    'Created by M.Abhishek',
                     style: TextStyle(
                         color: Colors.grey,
                         fontSize: 20,
                         fontWeight: FontWeight.normal,
                         letterSpacing: 2),
                   ),
-                  SizedBox(height: 20.0),
+                  SizedBox(height: 10.0),
                   Text(
-                    '2020',
+                    '2020 - 2022',
                     style: TextStyle(
                         color: Colors.grey,
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.normal,
                         letterSpacing: 2),
                   ),

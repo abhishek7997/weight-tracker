@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
-import 'screens/HomePage.dart';
-import './screens/chart.dart';
-import './screens/NotEnoughData.dart';
-import './screens/about.dart';
-import './screens/bmiPage.dart';
-import './screens/resultsPage.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-void main() => runApp(MyApp());
+import './screens/about_page.dart';
+import './screens/bmi_page.dart';
+import './screens/chart_page.dart';
+import './screens/not_enough_data_page.dart';
+import './screens/results_page.dart';
+import 'screens/home_page.dart';
+
+void main() async {
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  await initializeDateFormatting();
+  FlutterNativeSplash.remove();
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Weight Tracker',
-      theme: ThemeData.dark().copyWith(
-        primaryColor: Color(0xFF17142A),
-        scaffoldBackgroundColor: Color(0xFF17142A),
-      ),
-      // theme: ThemeData(
-      //   primarySwatch: Colors.deepOrange,
-      // ),
+      theme: ThemeData(
+          brightness: Brightness.dark,
+          primaryColor: Color(0xFF17142A),
+          scaffoldBackgroundColor: Color(0xFF17142A),
+          fontFamily: 'Montserrat'),
       initialRoute: '/',
       routes: {
         '/': (context) => MyHomePage(),
@@ -27,7 +34,11 @@ class MyApp extends StatelessWidget {
         NotEnoughData.routeName: (context) => NotEnoughData(),
         About.routeName: (context) => About(),
         InputPage.routeName: (context) => InputPage(),
-        ResultsPage.routeName: (context) => ResultsPage(),
+        ResultsPage.routeName: (context) => ResultsPage(
+              resultText: '',
+              bmiResult: '',
+              interpretation: '',
+            ),
       },
     );
   }

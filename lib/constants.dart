@@ -45,6 +45,7 @@ const kBodyTextStyle = TextStyle(
 );
 
 const String kNoWeightText = "No weight given";
+const String kSharedPrefKey = "listOfWeights";
 
 const kSelectedColor = Color(0xFF1eb77c);
 const kTodayColor = Color(0xFF1f5c49);
@@ -57,3 +58,8 @@ const kWeightCardColor = LinearGradient(
   end: Alignment.bottomRight,
   colors: [Color(0xFF2BFF88), Color(0xFF2BD2FF)],
 );
+
+List<Color> kgradientColors = [
+  const Color(0xff23b6e6),
+  const Color(0xff02d39a),
+];

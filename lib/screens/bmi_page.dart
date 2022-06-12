@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../models/BMICalculator.dart';
+
+import '../constants.dart';
+import '../models/bmi_calculator.dart';
 import '../models/bottom_button.dart';
 import '../models/icon_content.dart';
 import '../models/reusable_card.dart';
 import '../models/round_icon_button.dart';
-import '../screens/resultsPage.dart';
+import '../screens/results_page.dart';
 
 enum Gender { male, female }
 
 class InputPage extends StatefulWidget {
   static const routeName = '/inputPage';
+
   @override
   _InputPageState createState() => _InputPageState();
 }
@@ -20,15 +22,15 @@ class _InputPageState extends State<InputPage> {
   Color maleCardColor = kInactiveCardColor;
   Color femaleCardColor = kInactiveCardColor;
 
-  Gender selectedGender;
+  Gender? selectedGender;
   int height = 180;
   int weight = 60;
   int age = 18;
-  double avgWeight = 0.0;
+  double? avgWeight = 0.0;
 
   @override
   Widget build(BuildContext context) {
-    avgWeight = ModalRoute.of(context).settings.arguments;
+    avgWeight = ModalRoute.of(context)!.settings.arguments as double?;
     return Scaffold(
       appBar: AppBar(
         title: Text('Calculate BMI'),
@@ -140,7 +142,7 @@ class _InputPageState extends State<InputPage> {
                         ),
                         Text(
                           //weight.toString(),
-                          avgWeight.toStringAsFixed(2),
+                          avgWeight!.toStringAsFixed(2),
                           style: kNumberTextStyle,
                         ),
                       ],
