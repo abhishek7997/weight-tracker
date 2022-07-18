@@ -165,6 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Navigator.pushNamed(context, ChartPage.routeName),
             ),
           ],
+          backgroundColor: Color(0xFF17142A),
         ),
         drawer: AppDrawer(),
         body: Column(
