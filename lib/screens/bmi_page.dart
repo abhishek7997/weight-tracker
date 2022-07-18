@@ -34,6 +34,7 @@ class _InputPageState extends State<InputPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text('Calculate BMI'),
+          backgroundColor: Color(0xFF17142A),
         ),
         body: Padding(
           padding: const EdgeInsets.all(12.0),

@@ -100,6 +100,7 @@ class _ChartPage extends State<ChartPage> {
           centerTitle: true,
           automaticallyImplyLeading: true,
           title: Text("Graph of current week"),
+          backgroundColor: Color(0xFF17142A),
         ),
         body: Container(
           decoration: const BoxDecoration(color: kChartBackgroundColor),
