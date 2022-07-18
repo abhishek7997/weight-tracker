@@ -5,11 +5,11 @@ With this app, it is easy to maintain your weight and also calculate your BMI to
 
 ## Screenshots
 
-<img src="https://user-images.githubusercontent.com/68701271/115755715-45c9d880-a3bb-11eb-8b5a-2bca65167728.png" width="384">
+<img src="https://user-images.githubusercontent.com/68701271/179605391-5c62945d-a093-44d3-821b-c89d53e61e81.png" width="384">
 
 <img src="https://user-images.githubusercontent.com/68701271/115755758-4febd700-a3bb-11eb-9714-b831f802d7ef.png" width="384">
 
-<img src="https://user-images.githubusercontent.com/68701271/115756547-db656800-a3bb-11eb-9345-f9199cacbbfb.png" width="384">
+<img src="https://user-images.githubusercontent.com/68701271/179605414-e93264fc-0c12-457b-b4df-ec4c716ac136.png" width="384">
 
 ## VERY OLD SCREEHSHOT (Early Stages)
 
