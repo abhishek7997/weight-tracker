@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:weight_mon/screens/not_enough_data_page.dart';
-import 'package:weight_mon/widgets/display_weight_card.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../widgets/display_weight_card.dart';
 
 import './bmi_page.dart';
 import '../constants.dart';
@@ -13,60 +13,20 @@ import 'chart_page.dart';
 
 class MyHomePage extends StatefulWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
+class _MyHomePageState extends State<MyHomePage> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
-  CalendarFormat _calendarFormat = CalendarFormat.month;
 
-  UserWeight uw = new UserWeight();
+  // _selectedDay = DateTime.parse(DateFormat("yyyyMMdd").format(DateTime.now()));
+  UserWeights uw = UserWeights();
 
   // Store date and corresponding list of weight (length 1)
-  // _weights is used for building the table calender on screen
-  Map<DateTime, List> _weights = {};
-
-  // Controllers
   final _myController = TextEditingController();
-  late AnimationController _animationController;
-
-  @override
-  void initState() {
-    super.initState();
-    getData();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _animationController.forward();
-
-    setState(() {
-      _selectedDay =
-          DateTime.parse(DateFormat("yyyyMMdd").format(DateTime.now()));
-    });
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
 
   // read data from shared preferences whenever app is initialized
-  void getData() async {
-    await uw
-        .read(); // Call read function of the User object, so that data is read and used from shared preferences
-    if (mounted) {
-      setState(() {
-        for (var v in uw.listOfWeights!) {
-          DateTime dt = DateFormat("yyyy-MM-dd hh:mm:ss").parse(v['date']);
-          _weights[dt] = [v['weight']];
-        }
-      });
-    }
-  }
-
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     DateTime dt = DateTime.parse(DateFormat("yyyyMMdd").format(selectedDay));
     if (!isSameDay(_selectedDay, selectedDay)) {
@@ -90,23 +50,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _modalBottomSheetMenu(dt);
   }
 
-  void _onSubmit(value, DateTime dt) async {
+  void _onSubmit(String value, DateTime dt) async {
     if (value == "0.0" || value.isEmpty || value == "0") {
-      setState(() {
-        uw.removeWeight(dt.toString());
-      });
+      uw.removeWeight(dt.toString());
     } else {
-      setState(() {
-        _weights[dt] = [value].toList();
-        if (double.parse(value) >= 30.0) {
-          // add the given weight to the total data
-          uw.addWeight(dt.toString(), value);
-        }
-      });
+      if (double.parse(value) >= 30.0) {
+        // add the given weight to the total data
+        uw.addWeight(dt.toString(), double.parse(value));
+      }
     }
-    // save the weights entered permanently, so that the same is reloaded upon loading the app
-    uw.saveData();
-    Navigator.pop(context);
   }
 
   // return the input modal bottom sheet widget
@@ -181,7 +133,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       width: 20.0,
                     ),
                     ElevatedButton(
-                      onPressed: () => _onSubmit(_myController.value.text, dt),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _onSubmit(_myController.value.text, dt);
+                      },
                       child: Text('Submit'),
                     ),
                   ],
@@ -196,43 +151,37 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Weight Tracker",
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.show_chart),
-            color: Colors.white,
-            onPressed: () {
-              // If no weights are entered by the user for any day within the current week, show 'Not enough data'
-              // else show the graph
-              if (uw.length() >= 4) {
-                Navigator.pushNamed(context, ChartPage.routeName,
-                    arguments: uw.listOfWeights);
-              } else {
-                Navigator.pushNamed(context, NotEnoughData.routeName);
-              }
-            },
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            "Weight Tracker",
           ),
-        ],
-      ),
-      drawer: buildDrawer(context),
-      body: Column(
-        mainAxisSize: MainAxisSize.max,
-        children: <Widget>[
-          _buildTableCalendar(),
-          const SizedBox(height: 16.0),
-          Expanded(
-            // Display the weight of the selected day
-            child: DisplayWeightCard(
-              uw.getWeight(
-                _selectedDay.toString(),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.show_chart),
+              color: Colors.white,
+              onPressed: () =>
+                  Navigator.pushNamed(context, ChartPage.routeName),
+            ),
+          ],
+        ),
+        drawer: AppDrawer(),
+        body: Column(
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+            _buildTableCalendar(),
+            const SizedBox(height: 16.0),
+            Expanded(
+              // Display the weight of the selected day
+              child: DisplayWeightCard(
+                uw.getWeight(
+                  _selectedDay.toString(),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -245,26 +194,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       lastDay: DateTime.now(),
       focusedDay: _focusedDay,
       startingDayOfWeek: StartingDayOfWeek.monday,
-      calendarFormat: _calendarFormat,
-      calendarStyle: CalendarStyle(
-        selectedDecoration:
-            const BoxDecoration(color: kSelectedColor, shape: BoxShape.circle),
-        todayDecoration:
-            const BoxDecoration(color: kTodayColor, shape: BoxShape.circle),
-        markerDecoration:
-            const BoxDecoration(color: kMarkersColor, shape: BoxShape.circle),
-        markersAlignment: Alignment.center,
-        outsideDaysVisible: false,
-      ),
-      headerStyle: HeaderStyle(
-        formatButtonTextStyle:
-            TextStyle().copyWith(color: Colors.white, fontSize: 15.0),
-        formatButtonDecoration: BoxDecoration(
-          color: kTableButtonColor,
-          borderRadius: BorderRadius.circular(16.0),
-        ),
-        formatButtonVisible: false,
-      ),
+      calendarFormat: CalendarFormat.month,
+      calendarStyle: canlendarStyle,
+      headerStyle: headerStyle,
       selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
       onDaySelected: _onDaySelected,
       onDayLongPressed: _onDayLongPressed,
@@ -290,14 +222,20 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       height: 25.0,
       child: Center(
         child: Icon(
-          uw.getWeight(date.toString()) != kNoWeightText ? Icons.check : null,
+          uw.getWeight(date.toString()) != null ? Icons.check : null,
           color: Colors.green,
         ),
       ),
     );
   }
+}
 
-  Drawer buildDrawer(BuildContext context) {
+class AppDrawer extends StatelessWidget {
+  final uw = UserWeights();
+  AppDrawer({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -319,37 +257,48 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             ),
           ),
           ListTile(
-            title: Text('View Graph'),
-            onTap: () {
-              if (uw.length() >= 1) {
-                Navigator.pushNamed(context, ChartPage.routeName,
-                    arguments: uw.listOfWeights);
-              } else {
-                Navigator.pushNamed(context, NotEnoughData.routeName);
-              }
-            },
+            leading: const Icon(FontAwesomeIcons.chartArea),
+            minLeadingWidth: 10,
+            title: Text(
+              'View Graph',
+              style: TextStyle(
+                fontSize: 18.0,
+              ),
+            ),
+            onTap: () => Navigator.pushNamed(context, ChartPage.routeName),
           ),
           ListTile(
-            title: Text('Clear ALL Data'),
-            onTap: () {
-              setState(() {
-                uw.destroyData();
-              });
-            },
+            leading: const Icon(Icons.delete),
+            minLeadingWidth: 10,
+            title: Text(
+              'Clear ALL Data',
+              style: TextStyle(
+                fontSize: 18.0,
+              ),
+            ),
+            onTap: () => uw.reset(),
           ),
           ListTile(
-            title: Text('Calculate BMI'),
-            onTap: () {
-              Navigator.pushNamed(context, InputPage.routeName,
-                  arguments: uw.getAvgWeight());
-            },
+            leading: const Icon(FontAwesomeIcons.solidHeart),
+            minLeadingWidth: 10,
+            title: Text(
+              'Calculate BMI',
+              style: TextStyle(
+                fontSize: 18.0,
+              ),
+            ),
+            onTap: () => Navigator.pushNamed(context, InputPage.routeName),
           ),
           ListTile(
-            title: Text('About'),
-            onTap: () {
-              Navigator.pushNamed(context, About.routeName,
-                  arguments: uw.listOfWeights);
-            },
+            leading: const Icon(FontAwesomeIcons.circleInfo),
+            minLeadingWidth: 10,
+            title: Text(
+              'About',
+              style: TextStyle(
+                fontSize: 18.0,
+              ),
+            ),
+            onTap: () => Navigator.pushNamed(context, About.routeName),
           ),
         ],
       ),

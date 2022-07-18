@@ -1,98 +1,89 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
+import 'package:intl/intl.dart';
+import 'dart:developer' as devtools show log;
 
-class UserWeight {
-  int? id;
-  final String? weight;
-  double totalWeight = 0.0;
-  final String? date;
-  String? jsonString;
-  List<dynamic>? listOfWeights = [];
+extension Log on Object {
+  void log() => devtools.log(toString());
+}
 
-  UserWeight({this.weight, this.date});
+class UserWeights {
+  static Map<String, double> _weights = <String, double>{};
+  factory UserWeights() => UserWeights._internal();
+  UserWeights._internal();
 
-  int length() {
-    return listOfWeights!.length;
-  }
+  Future<void> read() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  void destroyData() {
-    listOfWeights!.clear();
-    totalWeight = 0.0;
-    jsonString = '';
-    saveData();
-  }
+    Map<String, dynamic> temp = new Map<String, dynamic>.from(jsonDecode(
+        prefs.getString(kSharedPrefKey) ?? jsonEncode(<String, double>{})));
 
-  void addWeight(String dt, String wt) {
-    for (var v in listOfWeights!) {
-      if (v.containsKey('date')) {
-        if (v['date'] == null) {
-          return;
-        } else if (v['date'] == dt) {
-          v['weight'] = wt;
-          return;
-        }
-      }
-    }
-    listOfWeights!.add({'date': dt, 'weight': wt});
-    totalWeight += double.parse(wt);
-    serialize();
-  }
-
-  void removeWeight(String dt) {
-    if (listOfWeights != null) {
-      for (var v in listOfWeights!) {
-        if (v.containsKey('date')) {
-          if (v['date'] == dt) {
-            totalWeight -= double.parse(v['weight']);
-          }
-        }
-      }
-    }
-    listOfWeights!.removeWhere((element) => element['date'] == dt);
-  }
-
-  String getWeight(String dt) {
-    if (listOfWeights != null) {
-      for (var v in listOfWeights!) {
-        if (v.containsKey('date') && v['date'] == dt) {
-          return double.parse(v['weight']).toString();
-        }
-      }
-    }
-    return kNoWeightText; // If there is no weight for given date
-  }
-
-  double getAvgWeight() {
-    if (listOfWeights!.length == 0) return 0;
-    return (totalWeight / listOfWeights!.length);
-  }
-
-  String serialize() {
-    return jsonEncode(listOfWeights);
-  }
-
-  void sortList() {
-    listOfWeights!.sort((a, b) {
-      var x = a['date'];
-      var y = b['date'];
-      return x.compareTo(y);
+    temp.forEach((String key, dynamic value) {
+      _weights[key] = value.toDouble();
     });
   }
 
-  read() async {
-    final prefs = await SharedPreferences.getInstance();
-    listOfWeights =
-        jsonDecode((prefs.getString(kSharedPrefKey) ?? "[]")) as List<dynamic>;
-    sortList();
-    for (var v in listOfWeights!) {
-      totalWeight += double.parse(v['weight']);
-    }
+  void saveData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kSharedPrefKey, jsonEncode(_weights));
   }
 
-  saveData() async {
-    sortList();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(kSharedPrefKey, serialize());
+  void addWeight(String date, double weight) {
+    _weights[date] = weight;
+    saveData();
   }
+
+  void removeWeight(String date) {
+    _weights.removeWhere((key, value) => key == date);
+    saveData();
+  }
+
+  void reset() {
+    _weights.clear();
+    saveData();
+  }
+
+  double? getWeight(String date) {
+    return _weights[date] ?? null;
+  }
+
+  double getAverageWeight() {
+    double avg = 0;
+    if (_weights.length == 0) return avg;
+    _weights.forEach((key, value) {
+      avg += value;
+    });
+
+    return avg / _weights.length;
+  }
+
+  List getListOfWeights() {
+    List _listOfWeights = [];
+    _weights.forEach(
+        (k, v) => _listOfWeights.add({"date": k, "weight": v.toString()}));
+    _listOfWeights.log();
+    return _listOfWeights;
+  }
+
+  List getGraphData() {
+    List weights = getListOfWeights();
+
+    DateTime startDate =
+        DateTime.parse(DateFormat("yyyyMMdd").format(DateTime.now()));
+    while (startDate.weekday != DateTime.monday) {
+      startDate = startDate.subtract(Duration(days: 1));
+    }
+
+    weights.removeWhere(
+        (element) => DateTime.parse(element['date']).isBefore(startDate));
+    weights.removeWhere(
+        (element) => DateTime.parse(element['date']).isAfter(DateTime.now()));
+
+    return weights;
+  }
+
+  get weights => _weights;
+
+  get length => _weights.length;
 }

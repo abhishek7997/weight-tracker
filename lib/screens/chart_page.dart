@@ -1,10 +1,9 @@
 import 'dart:math';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../constants.dart';
+import '../models/weights.dart';
 
 class ChartPage extends StatefulWidget {
   static const routeName = '/chartdata';
@@ -14,45 +13,25 @@ class ChartPage extends StatefulWidget {
 }
 
 class _ChartPage extends State<ChartPage> {
-  static const bool showAvg = false;
-
+  late List weights = [];
   final kLineChartGradient = LinearGradient(colors: kgradientColors);
   final kBelowBarGradient = LinearGradient(
       colors: kgradientColors.map((color) => color.withOpacity(0.3)).toList());
 
-  List? globalData = [];
-
-  // Get only the weights of the dates that lie within the current week; Discard the rest
-  void buildData(List? w) {
-    globalData = w;
-    DateTime startDate =
-        DateTime.parse(DateFormat("yyyyMMdd").format(DateTime.now()));
-    while (startDate.weekday != DateTime.monday) {
-      startDate = startDate.subtract(Duration(days: 1));
-    }
-
-    globalData!.removeWhere(
-        (element) => DateTime.parse(element['date']).isBefore(startDate));
-    globalData!.removeWhere(
-        (element) => DateTime.parse(element['date']).isAfter(DateTime.now()));
-    //sortList(globalData);
-  }
-
-  void sortList(List list) {
-    list.sort((a, b) {
-      var x = a['date'], y = b['date'];
-      return x.compareTo(y);
-    });
-  }
-
   // Return the minimum and maximum weights of some date within the current week
   List<double> findMaxMin() {
     double ma = 40, mi = 150;
-    for (var v in globalData!) {
-      ma = max(ma, double.parse(v['weight']));
-      mi = min(mi, double.parse(v['weight']));
+    for (Map w in weights) {
+      ma = max(ma, double.parse(w['weight']));
+      mi = min(mi, double.parse(w['weight']));
     }
     return [ma, mi];
+  }
+
+  @override
+  void initState() {
+    weights = UserWeights().getGraphData();
+    weights.log();
   }
 
   String valueToDayString(value) {
@@ -79,14 +58,14 @@ class _ChartPage extends State<ChartPage> {
   List<FlSpot> getSpots() {
     double x, y;
     List<FlSpot> spots = [];
-    spots.clear();
+
     DateTime startDate =
         DateTime.parse(DateFormat("yyyyMMdd").format(DateTime.now()));
 
     double searchKey(DateTime st) {
-      for (var v in globalData!) {
-        if (v['date'] == st.toString()) {
-          return double.parse(v['weight']);
+      for (var w in weights) {
+        if (w['date'] == st.toString()) {
+          return double.parse(w['weight']);
         }
       }
       return -1;
@@ -105,8 +84,8 @@ class _ChartPage extends State<ChartPage> {
         spots.add(FlSpot(x, y));
       } else {
         // If no weight for some date within the week, set the weight to the minimum value of the Y axis of the graph
-        spots.add(FlSpot(i.toDouble(),
-            globalData!.isNotEmpty ? findMaxMin()[1] - 10.0 : 40.0));
+        spots.add(FlSpot(
+            i.toDouble(), weights.isNotEmpty ? findMaxMin()[1] - 10.0 : 40.0));
       }
       startDate = startDate.add(Duration(days: 1));
     }
@@ -115,31 +94,30 @@ class _ChartPage extends State<ChartPage> {
 
   @override
   Widget build(BuildContext context) {
-    final List? data =
-        ModalRoute.of(context)!.settings.arguments as List<dynamic>?;
-    buildData(data);
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        automaticallyImplyLeading: true,
-        title: Text("Graph of current week"),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(color: kChartBackgroundColor),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                    left: 18.0, right: 26.0, top: 20.0, bottom: 20.0),
-                child: LineChart(
-                  mainData(),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          automaticallyImplyLeading: true,
+          title: Text("Graph of current week"),
+        ),
+        body: Container(
+          decoration: const BoxDecoration(color: kChartBackgroundColor),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                      left: 18.0, right: 26.0, top: 20.0, bottom: 20.0),
+                  child: LineChart(
+                    mainData(),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -194,8 +172,8 @@ class _ChartPage extends State<ChartPage> {
           border: Border.all(color: const Color(0xff1b4332), width: 1)),
       minX: 1,
       maxX: 7,
-      minY: globalData!.isNotEmpty ? findMaxMin()[1] - 10.0 : 40,
-      maxY: globalData!.isNotEmpty ? findMaxMin()[0] + 10.0 : 120,
+      minY: weights.isNotEmpty ? findMaxMin()[1] - 10.0 : 40,
+      maxY: weights.isNotEmpty ? findMaxMin()[0] + 10.0 : 120,
       lineBarsData: [
         LineChartBarData(
           spots: getSpots(),

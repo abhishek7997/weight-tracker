@@ -35,8 +35,9 @@ dependencies:
   pref_dessert: ^0.8.0
   path_provider: ^2.0.11
   fl_chart: ^0.51.0
-  font_awesome_flutter: ^10.1.0
   flutter_native_splash: ^2.1.6
+  provider: ^6.0.3
+  font_awesome_flutter: ^10.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:flutter/services.dart';
+import 'package:weight_mon/models/weights.dart';
 import '../constants.dart';
-import '../models/bmi_calculator.dart';
-import '../models/bottom_button.dart';
-import '../models/icon_content.dart';
-import '../models/reusable_card.dart';
-import '../models/round_icon_button.dart';
-import '../screens/results_page.dart';
 
 enum Gender { male, female }
 
@@ -26,192 +20,230 @@ class _InputPageState extends State<InputPage> {
   int height = 180;
   int weight = 60;
   int age = 18;
-  double? avgWeight = 0.0;
+  double avgWeight = UserWeights().getAverageWeight();
+  final _formKey = GlobalKey<FormState>();
+
+  TextEditingController _heightController = TextEditingController();
+  TextEditingController _weightController = TextEditingController();
+
+  double? bmi;
 
   @override
   Widget build(BuildContext context) {
-    avgWeight = ModalRoute.of(context)!.settings.arguments as double?;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Calculate BMI'),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Row(
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Calculate BMI'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: ReusableCard(
-                    onPress: () {
+                Row(
+                  children: [
+                    radioButton('Male', Colors.blue, Gender.male),
+                    radioButton('Female', Colors.pink, Gender.female),
+                  ],
+                ),
+                SizedBox(
+                  height: 20.0,
+                ),
+                TextFormField(
+                  controller: _heightController,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp("^[0-9]{0,3}[.]?[0-9]{0,2}"))
+                  ],
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Height',
+                    hintText: "Enter your height (in meters)",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter some text';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(
+                  height: 20.0,
+                ),
+                TextFormField(
+                  controller: _weightController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Weight',
+                    hintText: "Enter your weight (in kg)",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter some text';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(
+                  height: 20.0,
+                ),
+                Container(
+                  width: double.infinity,
+                  height: 50.0,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      double height =
+                          double.parse(_heightController.text) / 100;
+                      double weight = double.parse(_weightController.text);
                       setState(() {
-                        selectedGender = Gender.male;
+                        bmi = getBMI(height, weight);
                       });
                     },
-                    color: selectedGender == Gender.male
-                        ? kActiveCardColor
-                        : kInactiveCardColor,
-                    cardChild: IconContent(
-                      gender: 'MALE',
-                      icon: FontAwesomeIcons.mars,
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      primary: Colors.blue,
+                    ),
+                    child: Text(
+                      'Calculate',
+                      style: TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                   ),
                 ),
-                Expanded(
-                  child: ReusableCard(
-                    onPress: () {
-                      setState(() {
-                        selectedGender = Gender.female;
-                      });
-                    },
-                    color: selectedGender == Gender.female
-                        ? kActiveCardColor
-                        : kInactiveCardColor,
-                    cardChild: IconContent(
-                      gender: 'FEMALE',
-                      icon: FontAwesomeIcons.venus,
+                if (bmi != null) ...[
+                  SizedBox(
+                    height: 20.0,
+                  ),
+                  Container(
+                    width: double.infinity,
+                    child: Text(
+                      "Your BMI is :",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24.0,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ReusableCard(
-              color: kActiveCardColor,
-              cardChild: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'HEIGHT',
-                    style: kLabelTextStyle,
+                  SizedBox(
+                    height: 20.0,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        height.toString(),
-                        style: kNumberTextStyle,
-                      ),
-                      Text(
-                        'cm',
-                        style: kLabelTextStyle,
-                      ),
-                    ],
-                  ),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      thumbShape: RoundSliderThumbShape(
-                        enabledThumbRadius: 15.0,
-                      ),
-                      overlayShape: RoundSliderOverlayShape(
-                        overlayRadius: 30.0,
+                  Container(
+                    width: double.infinity,
+                    child: Text(
+                      bmi!.toStringAsFixed(1),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 42.0,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: Slider(
-                      value: height.toDouble(),
-                      min: 120.0,
-                      max: 220.0,
-                      activeColor: Colors.white,
-                      inactiveColor: Color(0xFF211E34),
-                      onChanged: (double newValue) {
-                        setState(() {
-                          height = newValue.round();
-                        });
-                      },
+                  ),
+                  SizedBox(
+                    height: 20.0,
+                  ),
+                  Container(
+                    width: double.infinity,
+                    child: Text(
+                      getInterpretation(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: getInterpretationColor(),
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                  ),
+                  Spacer(),
+                  Container(
+                    width: double.infinity,
+                    child: Text(
+                      "\u26a0 Not to be taken as medical advice!",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.blueGrey,
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.8,
+                      ),
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: ReusableCard(
-                    color: kActiveCardColor,
-                    cardChild: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'WEIGHT',
-                          style: kLabelTextStyle,
-                        ),
-                        Text(
-                          //weight.toString(),
-                          avgWeight!.toStringAsFixed(2),
-                          style: kNumberTextStyle,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ReusableCard(
-                    color: kActiveCardColor,
-                    cardChild: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'AGE',
-                          style: kLabelTextStyle,
-                        ),
-                        Text(
-                          age.toString(),
-                          style: kNumberTextStyle,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            RoundIconButton(
-                              icon: FontAwesomeIcons.minus,
-                              onPressed: () {
-                                setState(() {
-                                  age--;
-                                });
-                              },
-                            ),
-                            SizedBox(
-                              width: 10.0,
-                            ),
-                            RoundIconButton(
-                              icon: FontAwesomeIcons.plus,
-                              onPressed: () {
-                                setState(() {
-                                  age++;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                )
               ],
             ),
           ),
-          BottomButton(
-            buttonText: 'CALCULATE',
-            onTap: () {
-              BMICalculator calc =
-                  BMICalculator(height: height, weight: weight);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ResultsPage(
-                    bmiResult: calc.calculateBMI(),
-                    resultText: calc.getResult(),
-                    interpretation: calc.getInterpretation(),
-                  ),
-                ),
-              );
-            },
+        ),
+      ),
+    );
+  }
+
+  double getBMI(double height, double weight) {
+    return weight / (height * height);
+  }
+
+  String getInterpretation() {
+    if (bmi! >= 25) {
+      return 'You have a higher than normal body weight. Try to exercise more.';
+    } else if (bmi! > 18.5) {
+      return 'You have a normal body weight. Good job!';
+    } else {
+      return 'You have a lower than normal body weight. You can eat a bit more.';
+    }
+  }
+
+  Color getInterpretationColor() {
+    if (bmi! >= 25) {
+      return Colors.redAccent;
+    } else if (bmi! > 18.5) {
+      return Colors.green;
+    } else {
+      return Colors.orangeAccent;
+    }
+  }
+
+  Widget radioButton(String value, Color color, Gender gender) {
+    return Expanded(
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: 12.0,
+        ),
+        height: 80.0,
+        child: ElevatedButton(
+          onPressed: () {
+            setState(() {
+              selectedGender = gender;
+            });
+          },
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+              color: selectedGender != null && selectedGender == gender
+                  ? Colors.white
+                  : color,
+            ),
           ),
-        ],
+          style: ElevatedButton.styleFrom(
+            elevation: 0,
+            primary: selectedGender != null && selectedGender == gender
+                ? color
+                : Colors.grey[200],
+          ),
+        ),
       ),
     );
   }

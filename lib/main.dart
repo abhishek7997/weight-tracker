@@ -5,14 +5,14 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import './screens/about_page.dart';
 import './screens/bmi_page.dart';
 import './screens/chart_page.dart';
-import './screens/not_enough_data_page.dart';
-import './screens/results_page.dart';
 import 'screens/home_page.dart';
+import '../models/weights.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await initializeDateFormatting();
+  await UserWeights().read();
   FlutterNativeSplash.remove();
   runApp(MyApp());
 }
@@ -28,17 +28,12 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: Color(0xFF17142A),
           fontFamily: 'Montserrat'),
       initialRoute: '/',
+      debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => MyHomePage(),
         ChartPage.routeName: (context) => ChartPage(),
-        NotEnoughData.routeName: (context) => NotEnoughData(),
         About.routeName: (context) => About(),
         InputPage.routeName: (context) => InputPage(),
-        ResultsPage.routeName: (context) => ResultsPage(
-              resultText: '',
-              bmiResult: '',
-              interpretation: '',
-            ),
       },
     );
   }

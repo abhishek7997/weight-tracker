@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants.dart';
 
 class DisplayWeightCard extends StatefulWidget {
-  final String weight;
+  final double? weight;
 
   DisplayWeightCard(this.weight);
 
@@ -12,9 +12,9 @@ class DisplayWeightCard extends StatefulWidget {
 
 class _DisplayWeightCardState extends State<DisplayWeightCard> {
   Widget _getWeightText() {
-    if (widget.weight == kNoWeightText) {
+    if (widget.weight == null) {
       return Text(
-        widget.weight,
+        kNoWeightText,
         style: TextStyle(
           fontSize: 32.0,
           fontWeight: FontWeight.bold,
